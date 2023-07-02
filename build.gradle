@@ -1,0 +1,70 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '2.7.13-SNAPSHOT'
+	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+}
+
+group = 'com.huyhn'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven { url 'https://repo.spring.io/milestone' }
+	maven { url 'https://repo.spring.io/snapshot' }
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	/**
+	 * springdoc-openapi
+	 */
+	implementation "org.springdoc:springdoc-openapi-ui:1.6.12"
+	/**
+	 * liquibase
+	 */
+	implementation 'org.liquibase:liquibase-core'
+	implementation 'javax.xml.bind:jaxb-api'
+	implementation 'org.liquibase.ext:liquibase-hibernate5:4.1.1'
+}
+
+//tasks.named('test') {
+//	useJUnitPlatform()
+//}
+project.ext.diffChangelogFile = "src/main/resources/db/changelog/" + new Date().format("yyyyMMddHHmmss") + "_changelog.mysql.sql"
+tasks.register('liquibaseGenerateDiffChangelog', JavaExec) {
+	classpath = sourceSets.main.runtimeClasspath
+	main = 'liquibase.integration.commandline.Main'
+
+	args "--changeLogFile=${project.ext.diffChangelogFile}"
+	args "--url=jdbc:mysql://localhost:3306/smoothie_manager"
+	args "--username=root"
+	args "--password=FormosVN@123"
+	args "--referenceUrl=hibernate:spring:com.huyhn.smoothie.**.entity?dialect=org.hibernate.dialect.MySQL8Dialect&hibernate.physical_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy&hibernate.implicit_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy"
+	args "--defaultSchemaName=smoothie_manager"
+	args "--classpath=${"$buildDir/classes/java/main"}"
+	args "--driver=com.mysql.cj.jdbc.Driver"
+	args "diffChangeLog"
+}
+
+tasks.register('liquibaseUpdate', JavaExec) {
+	classpath = sourceSets.main.runtimeClasspath
+	main = 'liquibase.integration.commandline.Main'
+
+	args "--changeLogFile=src/main/resources/db/changelog/db.changelog-master.xml"
+	args "--url=jdbc:mysql://localhost:3306/smoothie_manager"
+	args "--username=root"
+	args "--password=FormosVN@123"
+	args "update"
+}
